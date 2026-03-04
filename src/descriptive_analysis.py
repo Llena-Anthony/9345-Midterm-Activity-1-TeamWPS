@@ -1,183 +1,186 @@
-"""
-Descriptive Analytics Script
-
-Purpose:
-Generate descriptive statistics and visualizations to understand
-respondent demographics, shopping behavior, and purchasing patterns.
-
-Input:
-data/processed/cleaned_survey.csv
-data/processed/basket_products.csv
-
-Output:
-Basic statistics and charts describing the dataset.
-"""
-
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+import re
 
-# --------------------------------------------------
+# ============================================================
 # PATH CONFIGURATION
-# --------------------------------------------------
-
+# ============================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_PATH = BASE_DIR / "data" / "processed" / "cleaned_survey.csv"
 
-SURVEY_PATH = BASE_DIR / "data" / "processed" / "cleaned_survey.csv"
-BASKET_PATH = BASE_DIR / "data" / "processed" / "basket_products.csv"
+df = pd.read_csv(DATA_PATH)
 
+# ============================================================
+# COLUMN NAMES (YOUR EXACT HEADERS)
+# ============================================================
+COL_AGE = "Age"
+COL_GENDER = "Gender"
+COL_OCC = "Current Occupation"
+COL_INCOME = "Monthly income salary or allowance"
+COL_FREQ = "How often do you shop for groceries in a month?"
+COL_SPEND = "How much do you spend on groceries every month?"
+COL_STORES = "What grocery stores do you usually buy your necessities from? (Select all that apply)"
+COL_FACTORS = "What primary factors do you find important in a  grocery store? (Select all that apply)"
+COL_PAYMENT = "What payment methods do you use in paying for groceries? (Select all that apply)"
+COL_TRIPTIME = "Among the following when do you usually take a trip to the grocery store?"
+COL_DURATION = "What would be the duration that you typically spend in a grocery store?"
+COL_PRODUCTS = "Which among the following products and goods do you usually buy? (Select all that apply)"
 
-# --------------------------------------------------
-# LOAD DATA
-# --------------------------------------------------
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+def clean_text(x):
+    if pd.isna(x):
+        return ""
+    x = str(x).strip()
+    x = re.sub(r"\s+", " ", x)
+    return x
 
-survey_df = pd.read_csv(SURVEY_PATH)
-basket_df = pd.read_csv(BASKET_PATH)
+def split_multiselect(value: str):
+    """
+    Safe split for Google Forms multi-select fields.
+    - If colon-labeled options exist, split only at new label boundaries.
+    - Otherwise, split by commas.
+    """
+    value = clean_text(value)
+    if not value:
+        return []
 
+    if ":" in value:
+        parts = re.split(r",\s(?=[A-Z][A-Za-z &/()-]+:)", value)
+        return [p.strip() for p in parts if p.strip()]
 
-# --------------------------------------------------
-# 1. AGE DISTRIBUTION
-# --------------------------------------------------
+    return [p.strip() for p in value.split(",") if p.strip()]
 
-def analyze_age_distribution():
-    age_counts = survey_df["Age"].value_counts()
+def multiselect_counts(series: pd.Series) -> pd.Series:
+    """
+    Count frequency of each selection in a multi-select column.
+    """
+    all_items = []
+    for v in series:
+        all_items.extend(split_multiselect(v))
+    return pd.Series(all_items).value_counts()
 
-    print("\nAge Distribution")
-    print(age_counts)
+def show_bar(series: pd.Series, title: str, xlabel: str, ylabel: str, top_n: int = None):
+    """
+    Display a bar chart for a series (value_counts output).
+    """
+    s = series.copy()
+    if top_n is not None:
+        s = s.head(top_n)
 
-    age_counts.plot(kind="bar", title="Age Distribution of Respondents")
-    plt.xlabel("Age Group")
-    plt.ylabel("Number of Respondents")
+    s.plot(kind="bar")
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.tight_layout()
     plt.show()
 
 
-# --------------------------------------------------
-# 2. GENDER DISTRIBUTION
-# --------------------------------------------------
+# ============================================================
+# DESCRIPTIVE ANALYSES (8)
+# ============================================================
 
-def analyze_gender_distribution():
-    gender_counts = survey_df["Gender"].value_counts()
+# 1) Age distribution
+def analysis_01_age():
+    res = df[COL_AGE].value_counts()
+    print("\n[1] AGE DISTRIBUTION")
+    print(res)
+    show_bar(res, "Age Distribution of Respondents", "Age Group", "Number of Respondents")
 
-    print("\nGender Distribution")
-    print(gender_counts)
-
-    gender_counts.plot(kind="pie", autopct="%1.1f%%", title="Gender Distribution")
+# 2) Gender distribution
+def analysis_02_gender():
+    res = df[COL_GENDER].value_counts()
+    print("\n[2] GENDER DISTRIBUTION")
+    print(res)
+    res.plot(kind="pie", autopct="%1.1f%%", title="Gender Distribution")
     plt.ylabel("")
+    plt.tight_layout()
     plt.show()
 
+# 3) Occupation distribution
+def analysis_03_occupation():
+    res = df[COL_OCC].value_counts()
+    print("\n[3] OCCUPATION DISTRIBUTION")
+    print(res)
+    show_bar(res, "Occupation of Respondents", "Occupation", "Count")
 
-# --------------------------------------------------
-# 3. OCCUPATION DISTRIBUTION
-# --------------------------------------------------
+# 4) Monthly income distribution
+def analysis_04_income():
+    res = df[COL_INCOME].value_counts()
+    print("\n[4] INCOME DISTRIBUTION")
+    print(res)
+    show_bar(res, "Monthly Income / Allowance Distribution", "Income Range", "Number of Respondents")
 
-def analyze_occupation_distribution():
-    occupation_counts = survey_df["Current Occupation"].value_counts()
+# 5) Shopping frequency distribution
+def analysis_05_frequency():
+    res = df[COL_FREQ].value_counts()
+    print("\n[5] SHOPPING FREQUENCY")
+    print(res)
+    show_bar(res, "Shopping Frequency per Month", "Frequency", "Number of Respondents")
 
-    print("\nOccupation Distribution")
-    print(occupation_counts)
+# 6) Monthly grocery spending distribution
+def analysis_06_spending():
+    res = df[COL_SPEND].value_counts()
+    print("\n[6] MONTHLY GROCERY SPENDING")
+    print(res)
+    show_bar(res, "Monthly Grocery Spending", "Spending Range", "Number of Respondents")
 
-    occupation_counts.plot(kind="bar", title="Occupation of Respondents")
-    plt.xlabel("Occupation")
-    plt.ylabel("Count")
-    plt.show()
+# 7) Most common grocery stores visited (multi-select)
+def analysis_07_stores():
+    res = multiselect_counts(df[COL_STORES])
+    print("\n[7] GROCERY STORES FREQUENCY (MULTI-SELECT)")
+    print(res)
+    show_bar(res, "Most Common Grocery Stores Visited", "Grocery Store", "Number of Mentions", top_n=10)
 
-
-# --------------------------------------------------
-# 4. INCOME DISTRIBUTION
-# --------------------------------------------------
-
-def analyze_income_distribution():
-    income_counts = survey_df["Monthly income salary or allowance"].value_counts()
-
-    print("\nIncome Distribution")
-    print(income_counts)
-
-    income_counts.plot(kind="bar", title="Monthly Income Distribution")
-    plt.xlabel("Income Range")
-    plt.ylabel("Count")
-    plt.show()
-
-
-# --------------------------------------------------
-# 5. SHOPPING FREQUENCY
-# --------------------------------------------------
-
-def analyze_shopping_frequency():
-    freq_counts = survey_df["How often do you shop"].value_counts()
-
-    print("\nShopping Frequency")
-    print(freq_counts)
-
-    freq_counts.plot(kind="bar", title="Shopping Frequency")
-    plt.xlabel("Frequency")
-    plt.ylabel("Count")
-    plt.show()
+# 8) Product categories purchased (multi-select; supports ARM context)
+def analysis_08_products():
+    res = multiselect_counts(df[COL_PRODUCTS])
+    print("\n[8] PRODUCT CATEGORY PURCHASE FREQUENCY (MULTI-SELECT)")
+    print(res)
+    show_bar(res, "Most Purchased Product Categories", "Product Category", "Number of Mentions", top_n=15)
 
 
-# --------------------------------------------------
-# 6. PAYMENT METHOD
-# --------------------------------------------------
+# ============================================================
+# OPTIONAL EXTRA (GOOD ADD-ONS IF YOU WANT 10+ ANALYSES)
+# ============================================================
+def extra_payment_methods():
+    res = multiselect_counts(df[COL_PAYMENT])
+    print("\n[EXTRA] PAYMENT METHODS (MULTI-SELECT)")
+    print(res)
+    show_bar(res, "Payment Methods Used", "Payment Method", "Number of Mentions")
 
-def analyze_payment_method():
-    payment_counts = survey_df["What payment method"].value_counts()
+def extra_primary_factors():
+    res = multiselect_counts(df[COL_FACTORS])
+    print("\n[EXTRA] PRIMARY FACTORS IN A GROCERY STORE (MULTI-SELECT)")
+    print(res)
+    show_bar(res, "Primary Factors Considered in a Grocery Store", "Factor", "Number of Mentions", top_n=10)
 
-    print("\nPayment Method")
-    print(payment_counts)
-
-    payment_counts.plot(kind="bar", title="Preferred Payment Method")
-    plt.xlabel("Payment Method")
-    plt.ylabel("Count")
-    plt.show()
-
-
-# --------------------------------------------------
-# 7. SHOPPING TIME
-# --------------------------------------------------
-
-def analyze_shopping_time():
-    time_counts = survey_df["When do you shop"].value_counts()
-
-    print("\nShopping Time")
-    print(time_counts)
-
-    time_counts.plot(kind="bar", title="Preferred Shopping Time")
-    plt.xlabel("Time of Day")
-    plt.ylabel("Count")
-    plt.show()
+def extra_trip_time():
+    res = df[COL_TRIPTIME].value_counts()
+    print("\n[EXTRA] TIME OF TRIP TO GROCERY")
+    print(res)
+    show_bar(res, "Usual Time of Grocery Trips", "Time of Day", "Number of Respondents")
 
 
-# --------------------------------------------------
-# 8. PRODUCT CATEGORY FREQUENCY
-# --------------------------------------------------
-
-def analyze_product_categories():
-    product_counts = basket_df.sum().sort_values(ascending=False)
-
-    print("\nProduct Category Frequency")
-    print(product_counts)
-
-    product_counts.plot(kind="bar", title="Most Purchased Product Categories")
-    plt.xlabel("Product Category")
-    plt.ylabel("Number of Customers")
-    plt.show()
-
-
-# --------------------------------------------------
-# MAIN EXECUTION
-# --------------------------------------------------
-
+# ============================================================
+# MAIN
+# ============================================================
 def main():
+    analysis_01_age()
+    analysis_02_gender()
+    analysis_03_occupation()
+    analysis_04_income()
+    analysis_05_frequency()
+    analysis_06_spending()
+    analysis_07_stores()
+    analysis_08_products()
 
-    analyze_age_distribution()
-    analyze_gender_distribution()
-    analyze_occupation_distribution()
-    analyze_income_distribution()
-    analyze_shopping_frequency()
-    analyze_payment_method()
-    analyze_shopping_time()
-    analyze_product_categories()
-
+    # Optional extras (uncomment if needed)
+    # extra_payment_methods()
+    # extra_primary_factors()
+    # extra_trip_time()
 
 if __name__ == "__main__":
     main()
