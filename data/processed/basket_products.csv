@@ -1,4 +1,4 @@
-"BUY_Bakery: Bread, pastries, and baked goods","BUY_Beverages: Soft drinks, juices, water, and alcoholic beverages","BUY_Dairy: Milk, cheese, yogurt, and eggs","BUY_Deli/Meat: Cold cuts, cheeses, and meats","BUY_Fresh Produce: Fruits, vegetables, and fresh herbs","BUY_Frozen Foods: Frozen meals, ice cream, and frozen vegetables","BUY_Health & Wellness: Vitamins, supplements, and health foods","BUY_Household Supplies: Cleaning products, toiletries, and paper goods","BUY_Pantry Staples: Canned goods, grains, pasta, and sauces","BUY_Snacks: Chips, cookies, nuts, and snacks","BUY_Specialty Sections: Ethnic foods, organic products, and gluten-free items"
+Bakery,Beverages,Dairy,Deli/Meat,FreshProduce,FrozenFoods,HealthAndWellness,HouseholdSupplies,PantryStaples,Snacks,SpecialtySections
 0,0,1,0,1,0,0,1,1,1,0
 0,0,0,0,1,0,0,1,1,1,0
 1,1,1,0,0,1,0,0,0,0,0
