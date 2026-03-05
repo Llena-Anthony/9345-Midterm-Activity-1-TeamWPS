@@ -3,17 +3,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import re
 
-# ============================================================
 # PATH CONFIGURATION
-# ============================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "data" / "processed" / "cleaned_survey.csv"
 
 df = pd.read_csv(DATA_PATH)
 
-# ============================================================
 # COLUMN NAMES (YOUR EXACT HEADERS)
-# ============================================================
 COL_AGE = "Age"
 COL_GENDER = "Gender"
 COL_OCC = "Current Occupation"
@@ -27,9 +23,7 @@ COL_TRIPTIME = "Among the following when do you usually take a trip to the groce
 COL_DURATION = "What would be the duration that you typically spend in a grocery store?"
 COL_PRODUCTS = "Which among the following products and goods do you usually buy? (Select all that apply)"
 
-# ============================================================
 # HELPER FUNCTIONS
-# ============================================================
 def clean_text(x):
     if pd.isna(x):
         return ""
@@ -78,9 +72,7 @@ def show_bar(series: pd.Series, title: str, xlabel: str, ylabel: str, top_n: int
     plt.show()
 
 
-# ============================================================
 # DESCRIPTIVE ANALYSES (8)
-# ============================================================
 
 # 1) Age distribution
 def analysis_01_age():
@@ -142,9 +134,7 @@ def analysis_08_products():
     show_bar(res, "Most Purchased Product Categories", "Product Category", "Number of Mentions", top_n=15)
 
 
-# ============================================================
 # OPTIONAL EXTRA (GOOD ADD-ONS IF YOU WANT 10+ ANALYSES)
-# ============================================================
 def extra_payment_methods():
     res = multiselect_counts(df[COL_PAYMENT])
     print("\n[EXTRA] PAYMENT METHODS (MULTI-SELECT)")
@@ -164,9 +154,7 @@ def extra_trip_time():
     show_bar(res, "Usual Time of Grocery Trips", "Time of Day", "Number of Respondents")
 
 
-# ============================================================
 # MAIN
-# ============================================================
 def main():
     analysis_01_age()
     analysis_02_gender()

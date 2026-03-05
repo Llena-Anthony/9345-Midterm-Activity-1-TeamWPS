@@ -2,27 +2,21 @@ from pathlib import Path
 import pandas as pd
 from mlxtend.frequent_patterns import apriori, association_rules
 
-# ============================================================
 # PATH CONFIGURATION
-# ============================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASKET_PATH = BASE_DIR / "data" / "processed" / "basket_products.csv"
 OUT_DIR = BASE_DIR / "outputs" / "tables"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ============================================================
 # PARAMETERS (EDIT THESE FOR YOUR REPORT)
-# ============================================================
 MIN_SUPPORT = 0.10        # minsup (e.g., 0.10 means 10% of transactions)
 MIN_CONFIDENCE = 0.60     # minconf (e.g., 0.60 means 60% confidence)
 MAX_LEN = 3               # max size of itemsets (controls output size)
 TOP_K = 20                # number of top rules to print
 
 
-# ============================================================
 # LOAD + VALIDATE BASKET DATA
-# ============================================================
 def load_basket() -> pd.DataFrame:
     """
     Loads basket dataset where:
@@ -47,9 +41,7 @@ def load_basket() -> pd.DataFrame:
     return basket.astype(bool)
 
 
-# ============================================================
 # STEP 1: APRIORI (FREQUENT ITEMSETS)
-# ============================================================
 def generate_frequent_itemsets(basket: pd.DataFrame) -> pd.DataFrame:
     """
     Step 1 (Apriori): Find frequent itemsets whose support >= minsup.
@@ -69,9 +61,7 @@ def generate_frequent_itemsets(basket: pd.DataFrame) -> pd.DataFrame:
     return itemsets
 
 
-# ============================================================
 # STEP 2: RULE GENERATION (SUPPORT, CONFIDENCE, LIFT, CONVICTION)
-# ============================================================
 def generate_rules(itemsets: pd.DataFrame) -> pd.DataFrame:
     """
     Step 2: Generate association rules from frequent itemsets, filtering by minconf.
@@ -120,9 +110,7 @@ def generate_rules(itemsets: pd.DataFrame) -> pd.DataFrame:
     return rules
 
 
-# ============================================================
 # SAVE OUTPUTS
-# ============================================================
 def save_outputs(itemsets: pd.DataFrame, rules: pd.DataFrame) -> None:
     """
     Save itemsets and rules to CSV for report tables.
@@ -138,17 +126,13 @@ def save_outputs(itemsets: pd.DataFrame, rules: pd.DataFrame) -> None:
     print(f" - {rules_path}")
 
 
-# ============================================================
 # PRINT SUMMARY (TOP RULES)
-# ============================================================
 def print_top_rules(rules: pd.DataFrame) -> None:
     print("\nTOP RULES (Sorted by Lift, then Confidence):")
     print(rules.head(TOP_K).to_string(index=False))
 
 
-# ============================================================
 # MAIN
-# ============================================================
 def main():
     print("Loading basket dataset...")
     basket = load_basket()

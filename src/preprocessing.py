@@ -2,9 +2,7 @@ from pathlib import Path
 import pandas as pd
 import re
 
-# ============================================================
 # PATH CONFIGURATION
-# ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 RAW_PATH = BASE_DIR / "data" / "raw" / "Alakita-Grocery.csv"
@@ -13,9 +11,7 @@ OUT_DIR = BASE_DIR / "data" / "processed"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ============================================================
 # TEXT CLEANING FUNCTION
-# ============================================================
 
 def clean_text(x):
     """
@@ -30,9 +26,7 @@ def clean_text(x):
     return x
 
 
-# ============================================================
 # MULTI-SELECT SPLITTING FUNCTION
-# ============================================================
 
 def split_multiselect(value: str):
     """
@@ -52,9 +46,7 @@ def split_multiselect(value: str):
     return [p.strip() for p in value.split(",") if p.strip()]
 
 
-# ============================================================
 # ONE HOT ENCODING FUNCTION
-# ============================================================
 
 def one_hot_from_multiselect(series: pd.Series, prefix: str = "") -> pd.DataFrame:
     """
@@ -77,9 +69,7 @@ def one_hot_from_multiselect(series: pd.Series, prefix: str = "") -> pd.DataFram
     return out
 
 
-# ============================================================
 # SIMPLIFY BASKET COLUMN NAMES
-# ============================================================
 
 def simplify_basket_column_names(df_basket: pd.DataFrame) -> pd.DataFrame:
     """
@@ -102,28 +92,17 @@ def simplify_basket_column_names(df_basket: pd.DataFrame) -> pd.DataFrame:
     return df_basket
 
 
-# ============================================================
 # MAIN PREPROCESSING PIPELINE
-# ============================================================
 
 def main():
 
-    # --------------------------------------------------------
     # Load dataset
-    # --------------------------------------------------------
-
     df = pd.read_csv(RAW_PATH)
 
-    # --------------------------------------------------------
     # Remove duplicate responses
-    # --------------------------------------------------------
-
     df = df.drop_duplicates()
 
-    # --------------------------------------------------------
     # Remove unnecessary columns
-    # --------------------------------------------------------
-
     drop_keywords = [
         "timestamp",
         "consent",
@@ -141,24 +120,15 @@ def main():
 
     print("Dropped columns:", cols_to_drop)
 
-    # --------------------------------------------------------
     # Clean all text columns
-    # --------------------------------------------------------
-
     for c in df.columns:
         if df[c].dtype == "object":
             df[c] = df[c].apply(clean_text)
 
-    # --------------------------------------------------------
     # Save cleaned survey dataset
-    # --------------------------------------------------------
-
     df.to_csv(OUT_DIR / "cleaned_survey.csv", index=False)
 
-    # --------------------------------------------------------
     # Create basket dataset for ARM
-    # --------------------------------------------------------
-
     products_col = "Which among the following products and goods do you usually buy? (Select all that apply)"
 
     if products_col not in df.columns:
@@ -166,25 +136,16 @@ def main():
 
     basket_products = one_hot_from_multiselect(df[products_col], prefix="BUY_")
 
-    # --------------------------------------------------------
     # Remove extremely rare categories
-    # --------------------------------------------------------
-
     min_count = 3
 
     keep_cols = basket_products.columns[basket_products.sum(axis=0) >= min_count]
     basket_products = basket_products[keep_cols]
 
-    # --------------------------------------------------------
     # Simplify column names
-    # --------------------------------------------------------
-
     basket_products = simplify_basket_column_names(basket_products)
 
-    # --------------------------------------------------------
     # Save basket dataset
-    # --------------------------------------------------------
-
     basket_products.to_csv(OUT_DIR / "basket_products.csv", index=False)
 
     print("Saved:")
@@ -192,9 +153,6 @@ def main():
     print(" - data/processed/basket_products.csv")
 
 
-# ============================================================
 # RUN SCRIPT
-# ============================================================
-
 if __name__ == "__main__":
     main()

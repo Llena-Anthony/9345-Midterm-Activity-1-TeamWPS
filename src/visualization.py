@@ -3,9 +3,7 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# ============================================================
 # PATH CONFIGURATION
-# ============================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SURVEY_PATH = BASE_DIR / "data" / "processed" / "cleaned_survey.csv"
@@ -15,9 +13,7 @@ RULES_PATH = BASE_DIR / "outputs" / "tables" / "association_rules.csv"
 FIG_DIR = BASE_DIR / "outputs" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
-# ============================================================
 # LOAD DATA
-# ============================================================
 survey_df = pd.read_csv(SURVEY_PATH)
 basket_df = pd.read_csv(BASKET_PATH)
 
@@ -26,9 +22,7 @@ if RULES_PATH.exists():
     rules_df = pd.read_csv(RULES_PATH)
 
 
-# ============================================================
 # HELPERS
-# ============================================================
 def clean_text(x):
     if pd.isna(x):
         return ""
@@ -92,9 +86,7 @@ def save_pie(series: pd.Series, title: str, filename: str):
     plt.close()
 
 
-# ============================================================
 # DESCRIPTIVE VISUALIZATIONS
-# ============================================================
 def plot_descriptive():
     """
     Generates and saves descriptive analytics charts.
@@ -212,9 +204,7 @@ def plot_descriptive():
     )
 
 
-# ============================================================
 # ARM VISUALIZATIONS
-# ============================================================
 def plot_arm():
     """
     Generates and saves ARM-related charts based on association_rules.csv.
@@ -249,9 +239,7 @@ def plot_arm():
     plt.close()
 
 
-# ============================================================
 # MAIN
-# ============================================================
 def main():
     print("Generating descriptive visualizations...")
     plot_descriptive()
