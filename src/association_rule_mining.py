@@ -80,6 +80,15 @@ def generate_rules(itemsets: pd.DataFrame) -> pd.DataFrame:
         min_threshold=MIN_CONFIDENCE
     )
 
+    rules = rules[
+        (rules["antecedents"].apply(lambda x: len(x)) == 1) &
+        (rules["consequents"].apply(lambda x: len(x)) == 1)
+        ]
+
+    rules = rules[rules["lift"] >= 1.10]
+    rules = rules[rules["support"] >= 0.20]
+
+
     if rules.empty:
         raise ValueError("No rules found. Lower MIN_CONFIDENCE or MIN_SUPPORT.")
 
