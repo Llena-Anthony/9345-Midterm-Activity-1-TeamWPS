@@ -6,10 +6,12 @@ import re
 # PATH CONFIGURATION
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "data" / "processed" / "cleaned_survey.csv"
+FIG_DIR = BASE_DIR / "outputs" / "figures"
+FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 df = pd.read_csv(DATA_PATH)
 
-# COLUMN NAMES (YOUR EXACT HEADERS)
+# COLUMN NAMES
 COL_AGE = "Age"
 COL_GENDER = "Gender"
 COL_OCC = "Current Occupation"
@@ -23,6 +25,7 @@ COL_TRIPTIME = "Among the following when do you usually take a trip to the groce
 COL_DURATION = "What would be the duration that you typically spend in a grocery store?"
 COL_PRODUCTS = "Which among the following products and goods do you usually buy? (Select all that apply)"
 
+
 # HELPER FUNCTIONS
 def clean_text(x):
     if pd.isna(x):
@@ -31,12 +34,8 @@ def clean_text(x):
     x = re.sub(r"\s+", " ", x)
     return x
 
+
 def split_multiselect(value: str):
-    """
-    Safe split for Google Forms multi-select fields.
-    - If colon-labeled options exist, split only at new label boundaries.
-    - Otherwise, split by commas.
-    """
     value = clean_text(value)
     if not value:
         return []
@@ -47,114 +46,162 @@ def split_multiselect(value: str):
 
     return [p.strip() for p in value.split(",") if p.strip()]
 
+
 def multiselect_counts(series: pd.Series) -> pd.Series:
-    """
-    Count frequency of each selection in a multi-select column.
-    """
     all_items = []
     for v in series:
         all_items.extend(split_multiselect(v))
     return pd.Series(all_items).value_counts()
 
-def show_bar(series: pd.Series, title: str, xlabel: str, ylabel: str, top_n: int = None):
-    """
-    Display a bar chart for a series (value_counts output).
-    """
+
+def save_bar(series: pd.Series, title: str, xlabel: str, ylabel: str, filename: str,
+             top_n: int = None, horizontal: bool = False):
     s = series.copy()
     if top_n is not None:
         s = s.head(top_n)
 
-    s.plot(kind="bar")
+    plt.figure(figsize=(10, 6))
+
+    if horizontal:
+        s.sort_values().plot(kind="barh")
+    else:
+        s.plot(kind="bar")
+
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    plt.show()
+    plt.savefig(FIG_DIR / filename, dpi=300, bbox_inches="tight")
+    plt.close()
 
 
-# DESCRIPTIVE ANALYSES (8)
+def save_pie(series: pd.Series, title: str, filename: str):
+    plt.figure(figsize=(7, 7))
+    series.plot(kind="pie", autopct="%1.1f%%")
+    plt.title(title)
+    plt.ylabel("")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / filename, dpi=300, bbox_inches="tight")
+    plt.close()
 
-# 1) Age distribution
+
+def save_crosstab_bar(ct: pd.DataFrame, title: str, xlabel: str, ylabel: str, filename: str,
+                      stacked: bool = False):
+    plt.figure(figsize=(11, 6))
+    ct.plot(kind="bar", stacked=stacked, ax=plt.gca())
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / filename, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+# ANALYSES
+
 def analysis_01_age():
     res = df[COL_AGE].value_counts()
     print("\n[1] AGE DISTRIBUTION")
     print(res)
-    show_bar(res, "Age Distribution of Respondents", "Age Group", "Number of Respondents")
+    save_bar(res, "Age Distribution of Respondents", "Age Group", "Number of Respondents",
+             "01_age_distribution.png")
 
-# 2) Gender distribution
+
 def analysis_02_gender():
     res = df[COL_GENDER].value_counts()
     print("\n[2] GENDER DISTRIBUTION")
     print(res)
-    res.plot(kind="pie", autopct="%1.1f%%", title="Gender Distribution")
-    plt.ylabel("")
-    plt.tight_layout()
-    plt.show()
+    save_pie(res, "Gender Distribution", "02_gender_distribution.png")
 
-# 3) Occupation distribution
+
 def analysis_03_occupation():
     res = df[COL_OCC].value_counts()
     print("\n[3] OCCUPATION DISTRIBUTION")
     print(res)
-    show_bar(res, "Occupation of Respondents", "Occupation", "Count")
+    save_bar(res, "Occupation of Respondents", "Occupation", "Count",
+             "03_occupation_distribution.png")
 
-# 4) Monthly income distribution
+
 def analysis_04_income():
     res = df[COL_INCOME].value_counts()
     print("\n[4] INCOME DISTRIBUTION")
     print(res)
-    show_bar(res, "Monthly Income / Allowance Distribution", "Income Range", "Number of Respondents")
+    save_bar(res, "Monthly Income / Allowance Distribution", "Income Range", "Number of Respondents",
+             "04_income_distribution.png")
 
-# 5) Shopping frequency distribution
+
 def analysis_05_frequency():
     res = df[COL_FREQ].value_counts()
     print("\n[5] SHOPPING FREQUENCY")
     print(res)
-    show_bar(res, "Shopping Frequency per Month", "Frequency", "Number of Respondents")
+    save_bar(res, "Shopping Frequency per Month", "Frequency", "Number of Respondents",
+             "05_shopping_frequency.png")
 
-# 6) Monthly grocery spending distribution
+
 def analysis_06_spending():
     res = df[COL_SPEND].value_counts()
     print("\n[6] MONTHLY GROCERY SPENDING")
     print(res)
-    show_bar(res, "Monthly Grocery Spending", "Spending Range", "Number of Respondents")
+    save_bar(res, "Monthly Grocery Spending", "Spending Range", "Number of Respondents",
+             "06_monthly_spending.png")
 
-# 7) Most common grocery stores visited (multi-select)
+
 def analysis_07_stores():
     res = multiselect_counts(df[COL_STORES])
     print("\n[7] GROCERY STORES FREQUENCY (MULTI-SELECT)")
     print(res)
-    show_bar(res, "Most Common Grocery Stores Visited", "Grocery Store", "Number of Mentions", top_n=10)
+    save_bar(res, "Most Common Grocery Stores Visited", "Number of Mentions", "Grocery Store",
+             "07_grocery_stores_top10.png", top_n=10, horizontal=True)
 
-# 8) Product categories purchased (multi-select; supports ARM context)
+
 def analysis_08_products():
     res = multiselect_counts(df[COL_PRODUCTS])
     print("\n[8] PRODUCT CATEGORY PURCHASE FREQUENCY (MULTI-SELECT)")
     print(res)
-    show_bar(res, "Most Purchased Product Categories", "Product Category", "Number of Mentions", top_n=15)
+    save_bar(res, "Most Purchased Product Categories", "Number of Mentions", "Product Category",
+             "08_product_categories_frequency.png", top_n=15, horizontal=True)
 
 
-# OPTIONAL EXTRA (GOOD ADD-ONS IF YOU WANT 10+ ANALYSES)
-def extra_payment_methods():
-    res = multiselect_counts(df[COL_PAYMENT])
-    print("\n[EXTRA] PAYMENT METHODS (MULTI-SELECT)")
-    print(res)
-    show_bar(res, "Payment Methods Used", "Payment Method", "Number of Mentions")
+def analysis_09_frequency_vs_spending():
+    ct = pd.crosstab(df[COL_FREQ], df[COL_SPEND])
+    print("\n[9] SHOPPING FREQUENCY VS MONTHLY GROCERY SPENDING")
+    print(ct)
+    save_crosstab_bar(
+        ct,
+        "Shopping Frequency vs Monthly Grocery Spending",
+        "Shopping Frequency",
+        "Number of Respondents",
+        "09_frequency_vs_spending.png",
+        stacked=False
+    )
+
 
 def extra_primary_factors():
     res = multiselect_counts(df[COL_FACTORS])
-    print("\n[EXTRA] PRIMARY FACTORS IN A GROCERY STORE (MULTI-SELECT)")
+    print("\n[EXTRA] PRIMARY FACTORS IN A GROCERY STORE")
     print(res)
-    show_bar(res, "Primary Factors Considered in a Grocery Store", "Factor", "Number of Mentions", top_n=10)
+    save_bar(res, "Primary Factors Considered in a Grocery Store", "Number of Mentions", "Factor",
+             "10_primary_factors_top10.png", top_n=10, horizontal=True)
+
+
+def extra_payment_methods():
+    res = multiselect_counts(df[COL_PAYMENT])
+    print("\n[EXTRA] PAYMENT METHODS")
+    print(res)
+    save_bar(res, "Payment Methods Used", "Number of Mentions", "Payment Method",
+             "11_payment_methods.png", horizontal=True)
+
 
 def extra_trip_time():
     res = df[COL_TRIPTIME].value_counts()
     print("\n[EXTRA] TIME OF TRIP TO GROCERY")
     print(res)
-    show_bar(res, "Usual Time of Grocery Trips", "Time of Day", "Number of Respondents")
+    save_bar(res, "Usual Time of Grocery Trips", "Time of Day", "Number of Respondents",
+             "12_trip_time.png")
 
 
-# MAIN
 def main():
     analysis_01_age()
     analysis_02_gender()
@@ -164,11 +211,13 @@ def main():
     analysis_06_spending()
     analysis_07_stores()
     analysis_08_products()
+    analysis_09_frequency_vs_spending()
 
-    # Optional extras (uncomment if needed)
-    # extra_payment_methods()
-    # extra_primary_factors()
-    # extra_trip_time()
+    # optional extras
+    extra_primary_factors()
+    extra_payment_methods()
+    extra_trip_time()
+
 
 if __name__ == "__main__":
     main()
