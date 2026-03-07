@@ -8,6 +8,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "data" / "processed" / "cleaned_survey.csv"
 FIG_DIR = BASE_DIR / "outputs" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
+TABLE_DIR = BASE_DIR / "outputs" / "tables"
+TABLE_DIR.mkdir(parents=True, exist_ok=True)
 
 df = pd.read_csv(DATA_PATH)
 
@@ -25,7 +27,32 @@ COL_TRIPTIME = "Among the following when do you usually take a trip to the groce
 COL_DURATION = "What would be the duration that you typically spend in a grocery store?"
 COL_PRODUCTS = "Which among the following products and goods do you usually buy? (Select all that apply)"
 
+INCOME_ORDER = [
+    "Below ₱10,957",
+    "₱10,957 to ₱21,914",
+    "₱21,914 to ₱43,828",
+    "₱43,828 to ₱76,669",
+    "₱76,669 to ₱131,484",
+    "₱131,484 to ₱219,140"
+]
 
+SPENDING_ORDER = [
+    "Less than ₱5,000",
+    "₱5,000 - ₱10,000",
+    "₱10,001 - ₱15,000",
+    "₱15,001 - ₱20,000",
+    "More than ₱20,000"
+]
+
+OCC_ORDER = [
+    "Student",
+    "Employed (full-time)",
+    "Employed (part-time)",
+    "Self-employed",
+    "Freelancer",
+    "Unemployed",
+    "Retired"
+]
 # HELPER FUNCTIONS
 def clean_text(x):
     if pd.isna(x):
@@ -97,6 +124,38 @@ def save_crosstab_bar(ct: pd.DataFrame, title: str, xlabel: str, ylabel: str, fi
     plt.tight_layout()
     plt.savefig(FIG_DIR / filename, dpi=300, bbox_inches="tight")
     plt.close()
+
+def save_crosstab_tables(ct: pd.DataFrame, prefix: str):
+    """Save count and row-percentage tables."""
+    ct.to_csv(TABLE_DIR / f"{prefix}_counts.csv")
+
+    ct_pct = ct.div(ct.sum(axis=1), axis=0) * 100
+    ct_pct = ct_pct.round(2)
+    ct_pct.to_csv(TABLE_DIR / f"{prefix}_row_percent.csv")
+
+    return ct_pct
+
+
+def save_100pct_stacked_bar(ct_pct: pd.DataFrame, title: str, xlabel: str, ylabel: str, filename: str):
+    """Save a 100% stacked bar chart using row percentages."""
+    plt.figure(figsize=(11, 6))
+    ct_pct.plot(kind="bar", stacked=True, ax=plt.gca())
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.xticks(rotation=45, ha="right")
+    plt.legend(title="Monthly Grocery Spending", bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / filename, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+def reorder_if_present(series_or_index, preferred_order):
+    """Keep only labels that exist, while following a preferred order."""
+    present = list(series_or_index)
+    ordered = [x for x in preferred_order if x in present]
+    remaining = [x for x in present if x not in ordered]
+    return ordered + remaining
 
 
 # ANALYSES
@@ -177,6 +236,68 @@ def analysis_09_frequency_vs_spending():
         stacked=False
     )
 
+def analysis_10_income_vs_spending():
+        income = df[COL_INCOME].apply(clean_text)
+        spend = df[COL_SPEND].apply(clean_text)
+
+        ct = pd.crosstab(income, spend)
+
+        row_order = reorder_if_present(ct.index, INCOME_ORDER)
+        col_order = reorder_if_present(ct.columns, SPENDING_ORDER)
+        ct = ct.reindex(index=row_order, columns=col_order, fill_value=0)
+
+        print("\n[10] INCOME LEVEL VS MONTHLY GROCERY SPENDING")
+        print(ct)
+
+        save_crosstab_bar(
+            ct,
+            "Income Level vs Monthly Grocery Spending",
+            "Monthly Income / Allowance",
+            "Number of Respondents",
+            "10_income_vs_spending_counts.png",
+            stacked=False
+        )
+
+        ct_pct = save_crosstab_tables(ct, "10_income_vs_spending")
+        save_100pct_stacked_bar(
+            ct_pct,
+            "Income Level vs Monthly Grocery Spending (Row %)",
+            "Monthly Income / Allowance",
+            "Percentage of Respondents",
+            "10_income_vs_spending_100pct.png"
+        )
+
+def analysis_11_occupation_vs_spending():
+        occ = df[COL_OCC].apply(clean_text)
+        spend = df[COL_SPEND].apply(clean_text)
+
+        ct = pd.crosstab(occ, spend)
+
+        row_order = reorder_if_present(ct.index, OCC_ORDER)
+        col_order = reorder_if_present(ct.columns, SPENDING_ORDER)
+        ct = ct.reindex(index=row_order, columns=col_order, fill_value=0)
+
+        print("\n[11] OCCUPATION VS MONTHLY GROCERY SPENDING")
+        print(ct)
+
+        save_crosstab_bar(
+            ct,
+            "Occupation vs Monthly Grocery Spending",
+            "Occupation",
+            "Number of Respondents",
+            "11_occupation_vs_spending_counts.png",
+            stacked=False
+        )
+
+        ct_pct = save_crosstab_tables(ct, "11_occupation_vs_spending")
+        save_100pct_stacked_bar(
+            ct_pct,
+            "Occupation vs Monthly Grocery Spending (Row %)",
+            "Occupation",
+            "Percentage of Respondents",
+            "11_occupation_vs_spending_100pct.png"
+        )
+
 
 def extra_primary_factors():
     res = multiselect_counts(df[COL_FACTORS])
@@ -212,6 +333,9 @@ def main():
     analysis_07_stores()
     analysis_08_products()
     analysis_09_frequency_vs_spending()
+    analysis_10_income_vs_spending()
+    analysis_11_occupation_vs_spending()
+
 
     # optional extras
     extra_primary_factors()
