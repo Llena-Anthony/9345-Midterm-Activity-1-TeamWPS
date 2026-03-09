@@ -397,12 +397,16 @@ def analysis_11_occupation_vs_spending():
 def analysis_12_most_time_spent():
     """Generates the chart for sections where customers spend the most time."""
     res = multiselect_counts(df[COL_MOST_TIME])
-    print("\nMOST TIME SPENT SECTION")
-    print(res)
+
+    # Top 5 highest-count categories only
+    res_top = res.sort_values(ascending=False).head(5)
+
+    print("\nMOST TIME SPENT SECTION (TOP 5)")
+    print(res_top)
 
     save_bar(
-        res,
-        "Sections Where Customers Spend the Most Time",
+        res_top,
+        "Top 5 Sections Where Customers Spend the Most Time",
         "Number of Mentions",
         "Store Section",
         "12_most_time_spent_section.png",
@@ -413,12 +417,20 @@ def analysis_12_most_time_spent():
 def analysis_13_least_time_spent():
     """Generates the chart for sections where customers spend the least time."""
     res = multiselect_counts(df[COL_LEAST_TIME])
-    print("\nLEAST TIME SPENT SECTION")
-    print(res)
+
+    # Exclude categories already used in the top 5 most-time chart
+    most_time_top5 = multiselect_counts(df[COL_MOST_TIME]).sort_values(ascending=False).head(5)
+    overlap_categories = set(most_time_top5.index)
+
+    # Bottom 5 lowest-count categories, excluding overlaps
+    res_bottom = res[~res.index.isin(overlap_categories)].sort_values(ascending=True).head(5)
+
+    print("\nLEAST TIME SPENT SECTION (BOTTOM 5, NO OVERLAP)")
+    print(res_bottom)
 
     save_bar(
-        res,
-        "Sections Where Customers Spend the Least Time",
+        res_bottom,
+        "Bottom 5 Sections Where Customers Spend the Least Time",
         "Number of Mentions",
         "Store Section",
         "13_least_time_spent_section.png",
