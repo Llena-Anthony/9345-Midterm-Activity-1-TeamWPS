@@ -13,7 +13,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 MIN_SUPPORT = 0.10        # minsup (e.g., 0.10 means 10% of transactions)
 MIN_CONFIDENCE = 0.60     # minconf (e.g., 0.60 means 60% confidence)
 MAX_LEN = 3               # max size of itemsets (controls output size)
-TOP_K = 20                # number of top rules to print
+TOP_K = 30                # number of top rules to print, refactored by: Nathaniel
 
 
 # LOAD + VALIDATE BASKET DATA
@@ -85,8 +85,7 @@ def generate_rules(itemsets: pd.DataFrame) -> pd.DataFrame:
         (rules["consequents"].apply(lambda x: len(x)) == 1)
         ]
 
-    rules = rules[rules["lift"] >= 1.10]
-    rules = rules[rules["support"] >= 0.20]
+    rules = rules[rules["lift"] > 1.00] # refactored by: Nathaniel
 
 
     if rules.empty:
