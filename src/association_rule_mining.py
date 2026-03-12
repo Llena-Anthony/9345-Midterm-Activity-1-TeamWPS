@@ -13,7 +13,6 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 MIN_SUPPORT = 0.10        # minsup (e.g., 0.10 means 10% of transactions)
 MIN_CONFIDENCE = 0.60     # minconf (e.g., 0.60 means 60% confidence)
 MAX_LEN = 3               # max size of itemsets (controls output size)
-TOP_K = 35                # number of top rules to print, refactored by: Nathaniel
 
 
 # LOAD + VALIDATE BASKET DATA
@@ -137,7 +136,7 @@ def save_outputs(itemsets: pd.DataFrame, rules: pd.DataFrame) -> None:
 # PRINT SUMMARY (TOP RULES)
 def print_top_rules(rules: pd.DataFrame) -> None:
     print("\nTOP RULES (Sorted by Lift, then Confidence):")
-    print(rules.head(TOP_K).to_string(index=False))
+    print(rules.to_string(index=False))
 
 
 # MAIN
