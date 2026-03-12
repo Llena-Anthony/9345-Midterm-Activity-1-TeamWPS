@@ -13,7 +13,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 MIN_SUPPORT = 0.10        # minsup (e.g., 0.10 means 10% of transactions)
 MIN_CONFIDENCE = 0.60     # minconf (e.g., 0.60 means 60% confidence)
 MAX_LEN = 3               # max size of itemsets (controls output size)
-TOP_K = 30                # number of top rules to print, refactored by: Nathaniel
+TOP_K = 35                # number of top rules to print, refactored by: Nathaniel
 
 
 # LOAD + VALIDATE BASKET DATA
